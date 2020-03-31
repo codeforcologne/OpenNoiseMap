@@ -1,4 +1,4 @@
 # OpenNoiseMap
-Interaktive Karte zur Darstellung der Lärmmessungen der SensorCommunity
+Interaktive Karte zur Darstellung der Lärmmessungen der [SensorCommunity](https://sensor.community/de/)
 
-This is a OpenLayers 6 Application. Please go to the [OpenLayers Quickstart site](https://openlayers.org/en/latest/doc/quickstart.html) for further instructions.
+Dies ist eine OpenLayers6 Anwendung. Weitere Informationen zur Installation auf:  [OpenLayers Quickstart site](https://openlayers.org/en/latest/doc/quickstart.html).
