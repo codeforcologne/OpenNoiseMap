@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!--
+https://www.codefor.de/koeln/
+contact@opendemdata.info 
+based on Openlayers: https://openlayers.org/
+License: BSD 2-Clause License
+https://tldrlegal.com/license/bsd-2-clause-license-(freebsd)
+-->
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Interaktive Karte zur Darstellung von Lärmmessungen">
+    <meta name="keywords" content="Lärm, Messung, Lärmkarte, Dezibel, Open Data, OpenLayers">
+    <meta name="author" content="contact@opendemdata.info">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenNoiseMap</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden
+        }
+        
+        .ol-viewport {
+            overflow: unset!important;
+        }
+        
+        .map {
+            width: 100%;
+            height: calc(100% - 65px);
+        }
+        
+        .timeslider {
+            position: absolute;
+            left: 100px;
+            background-color: lightblue!important;
+        }
+        
+        .head {
+            height: 55px;
+            color: white;
+        }
+        
+        body {
+            background-color: black;
+        }
+        
+        .ol-zoom {
+            top: 350px!important;
+        }
+        
+        .noiseselect {
+            .position: absolute;
+            top: 10px;
+            width: 250px;
+            height: 200px;
+            left: 10px;
+            background-color: lightblue!important;
+        }
+        
+        .objSpanNode {
+            left: 10px;
+            position: absolute;
+            top: 180px;
+        }
+        
+        .objSpanNode2 {
+            left: 210px;
+            position: absolute;
+            top: 180px;
+        }
+        
+        #schwellenwert::before {
+            content: '';
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            -moz-border-radius: 7.5px;
+            -webkit-border-radius: 7.5px;
+            border-radius: 7.5px;
+            background-color: #00FF00;
+        }
+        
+        #schwellenwert::after {
+            content: '';
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            -moz-border-radius: 7.5px;
+            -webkit-border-radius: 7.5px;
+            border-radius: 7.5px;
+            background-color: #FF0000;
+        }
+        
+        .switchDiv {
+            background: url("images/show.svg");
+        }
+        
+        .switchDivHide {
+            background: url("images/hide.svg");
+        }
+        
+        .ol-popup {
+            position: absolute;
+            background-color: white;
+            -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+            filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #cccccc;
+            bottom: 12px;
+            left: -50px;
+            min-width: 280px;
+            z-index: 99999;
+        }
+        
+        .ol-popup:after,
+        .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+        
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 48px;
+            margin-left: -10px;
+        }
+        
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 48px;
+            margin-left: -11px;
+        }
+        
+        .ol-popup-closer {
+            text-decoration: none;
+            position: absolute;
+            top: 2px;
+            right: 8px;
+        }
+        
+        .ol-popup-closer:after {
+            content: "✖";
+        }
+        
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        
+        .popupMain {
+            height: 100px;
+            overflow-y: scroll;
+        }
+        
+        .languageIcon {
+            position: relative;
+        }
+        
+        .title {
+            float: left;
+            top: -20px;
+            position: relative;
+        }
+        
+        .head {
+            color: white;
+        }
+        
+        .modal3.open {
+            display: grid;
+            grid-template-rows: 100px auto 100px;
+        }
+        
+        .modal3_content {
+            overflow-y: auto;
+        }
+        
+        .bigradio {
+            min-height: 20px;
+            min-width: 20px;
+        }
+        
+        .modal_header {
+            height: 40px;
+        }
+        
+        .modal_header_fi {
+            height: 0px;
+        }
+        
+        .modal_footer {
+            position: absolute;
+            bottom: 70px;
+            right: 100px;
+        }
+        
+        .closeInfo {
+            right: 50px;
+            top: 15px;
+            position: absolute;
+        }
+        
+        .modal_content {
+            margin-right: 30px;
+            overflow: auto;
+            height: calc(100% - 140px);
+        }
+        /* Extra small devices (phones, 600px and down) */
+        
+        @media only screen and (max-width: 600px) {
+            .modal3 {
+                padding: 20px;
+                display: none;
+                height: 100%;
+                left: 0;
+                position: fixed;
+                top: 0;
+                width: 100%;
+                background-color: black;
+                color: white;
+                z-index: 9999;
+            }
+        }
+        /* Small devices (portrait tablets and large phones, 600px and up) */
+        
+        @media only screen and (min-width: 600px) {
+            .modal3 {
+                padding: 20px;
+                display: none;
+                position: fixed;
+                top: 100px;
+                left: 50px;
+                right: 50px;
+                bottom: 150px;
+                background-color: black;
+                color: white;
+                z-index: 9999;
+            }
+        }
+        
+        a:link {
+            color: blue;
+        }
+        
+        a:visited {
+            color: blue;
+        }
+        
+        a:hover {
+            color: lightblue;
+        }
+        
+        a:active {
+            color: blue;
+        }
+        
+        a.blackdiv:link {
+            color: lightblue;
+        }
+        
+        a.blackdiv:visited {
+            color: lightblue;
+        }
+        
+        a.blackdiv:hover {
+            color: lightcyan;
+        }
+    </style>
+</head>
+<div id="head" class="head">
+    <h1 id="titleApp" class="title">TEST OpenNoiseMap&nbsp; &nbsp; </h1>
+    <img class="languageIcon" id="helpIcon" src="images/help.png" title="Über, Hilfe und Daten" alt="Über, Hilfe und Daten" height="45" width="45">
+    <img class="languageIcon" id="legalIcon" src="images/legal.png" title="Rechtliches" alt="Rechtliches" height="45" width="45">
+</div>
+
+<body>
+    <div id="map" class="map"></div>
+
+    <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+        <div id="popup-content"></div>
+    </div>
+    <div id="help" class="modal3">
+        <div id="helpHeader" class="modal_header">
+            <div id="helpText" class="modal_headerText">Über, Hilfe und Daten</div>
+            <img id="closeHelp" class="closeInfo" src="images/close.svg" alt="close" width="30" height="30">
+        </div>
+        <div id="selectHelp" class="modal_content">
+            <h4>Mit dieser Web Karte lassen sich tägliche Überschreitungswerte des maximal gemessenen Schalldruckes aus den Daten der  <a class="blackdiv" target="_blank" href="https://sensor.community/de/">Sensor Community</a> interaktiv darstellen.
+				Die Daten stehen der unter Database Contents License (<a class="blackdiv" href="https://sensor.community/de/">DbCL</a>) v1.0.</h4>
+            </p>
+            <h2>Über  CodeforCologne  [OK-Lab Köln]</h2>
+            <p>Das <a class="blackdiv" target="_blank" href="https://www.meetup.com/de-DE/OKLab-Koln-Meetup">CodeforCologne Meetup</a> ist ein zwei wöchentliches Treffen um Anwendungen, freie Daten und Visualisierungen zu erstellen und Wissen auszutauschen.</p>
+            <a class="blackdiv" target="_blank" href="https://codefor.de/koeln/"><img src="images/oklab_koelle.png" alt="CodeforCologne"></a>
+            <h2>Hilfe</h2>
+            <p>Um 22 Uhr (MESZ) wird die Sensor Community <a class="blackdiv" target="_blank" href="https://api.madavi.de/static/v1/data.noise.json">API</a> ausgelesen und die vorhandenen Sensoren in eine PostGIS Datenbank geschrieben. Die Nacht fängt entsprechend am Vortag um 22 Uhr an, um eine zusammenhängende Aufnahme von Nacht (22-6 Uhr) und Tag (6-22 Uhr) zu gewährleisten. Es werden nur Länder in Europa, für welche die MESZ gilt, berücksichtigt.</p>
+            <p>Dann wird alle 120 Sekunden die API abgegfragt, ob neue Messungen für den maximal gemessenen Schalldruck (noise_LA_max) vorliegen. Die Sensoren sind so eigestellt, dass ca. alle 144 bis 148 Sekunden die Werte an den Server übermittelt werden. In der Tabelle stehen die Dezibelwerte für die Tages- und Nachtzeiten von 35 dB bis 100 dB in einem Intervall von 5 dB. Wird der Wert der Spalte überschritten, wird die Überschreitung entsprechend hinzuaddiert. So läßt sich recht einfach die Anzahl der Überschreitungen für den gewünschten Schallpegel ablesen.</p>
+            <p>Ihr könnt die folgenden Anpassungen vornehmen.</p>
+            <p>Umschalten zwischen den Überschreitungen in der Nacht (22-6 Uhr) und am Tag (6-22 Uhr):</p>
+            <img src="images/tag_nacht_radio.png" alt="Umschalten Tag Nacht Modus">
+            <p>Auswahl des maximal gemessenen Schalldrucks in Dezibel (dB):</p>
+            <img src="images/ausw_db.png" alt="Auswahl dB">
+            <p>Auswahl des Schwellenwertes:</p>
+            <img src="images/ausw_schwellenwert.png" alt="Auswahl Schwellenwert">
+            <p>Wurde der Schwellenwert für einen Sensor überschritten, wird dies als roter Kreis dargestellt. Findet keine Überschreitung statt als grüner Kreis.</p>
+            <p>Beispiel: Wenn Du z.B. wissen möchtest ob der Dezibelwert von 85 dB (z.B. durch Fluglärm) 20 mal überschritten wurde in der Nacht, bitte zunächst den Radiobutton "Nacht: 22-6 Uhr" aktivieren. Dann den dB Wert von 85 in der Dropdown-Liste auswählen. Bei den Überschreitungen mitttels des Schiebereglers 20 einstellen. Alle Sensoren bei denen mindestens 20 mal der Wert von 85 dB gemessen wurde, werden in rot dargestellt, sonst in Grün.</p>
+            <p>Auswahl des Datums:</p>
+            <img src="images/ausw_datum.png" alt="Auswahl des Datums">
+            <p>Es existieren in der Datenbank Werte ab dem 18.03.2020.</p>
+            <p>Durch anklicken eines Sensors können die Überschreitungen direkt abgelesen werden. Des weiteren kann über einen externen Link zur Sensor Community die Statistik der letzen 24 Stunden für den Senor angeschaut werden:</p>
+            <img src="images/featureinfo.png" alt="FeatureInfo">
+            <p>Durch ein Anklicken des Augensymbols in der linken oberen Ecke der Bedienwerkzeuge lassen sich diese weg schalten um, auch bei mobilen Endgeräten genug Platz für die Kartendarstellung zu haben:</p>
+            <img src="images/eye_close.png" alt="Auswahl dB">
+
+            <h2>Daten Download</h2>
+            <p>Die ursprünglichen Daten stammen von der <a class="blackdiv" target="_blank" href="https://sensor.community/de/">Sensor Community</a> und stehen der unter Database Contents License (<a class="blackdiv" href="https://sensor.community/de/">DbCL</a>) v1.0.</p>
+            <p><a class="blackdiv" target="_blank" href="https://opendem.info/ol6/noise/download/opennoisemap.json">Hier</a> stehen die abgeleiteten Daten ab dem 11.2.2020 als GeoJson bereit (Stand 22 Uhr MESZ).</p>
+            <p>Der WMS-T Dienst kann ebenfalls unter den oben aufgeführten Nutzungsbedingungen verwendet werden:</p>
+            <ul>
+                <li>Dienst URL: https://www.opendem.info/geoserver/openair/wms</li>
+                <li>Layer: openair:noise</li>
+                <li>Time: time = yyyy-mm-dd</li>
+                </u>
+                <p>
+                    <a class="blackdiv" href="https://github.com/codeforcologne/OpenNoiseMap">
+                        <img src="images/GitHub-Mark-64px.png" alt="GitHub" style="width:64px;height:64px;border:0;">Code on GitHub
+                    </a>
+                </p>
+
+                <div id="helpFooter" class="modal_footer">OpenNoiseMap</div>
+        </div>
+    </div>
+    <div id="legal" class="modal3">
+        <div id="legalHeader" class="modal_header">
+            <div id="legalText" class="modal_headerText">Legal Notes</div>
+            <img id="closeLegal" class="closeInfo" src="images/close.svg" alt="close" width="30" height="30">
+        </div>
+        <div id="selectLegal" class="modal_content">
+            <h2 id="legal_headline">Rechtliche Hinweise</h2>
+            <h3 id="impress">Impressum</h3>
+            <p id="impress_text">Verantwortlich für diesen Webauftritt ist: Martin Over, c/o OK Lab Köln, Hackländerstraße 2, 50825 Köln, contact(at)OpenDEMData.info</p>
+            <h3 id="disclaimer">Haftungsausschluss</h3>
+            <h4 id="legal_disclaimer_content">Haftung für Inhalte</h4>
+            <p id="legal_disclaimer_content_text">Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach § 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt. Eine diesbezügliche Haftung ist jedoch erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden von entsprechenden Rechtsverletzungen werden wir diese Inhalte umgehend entfernen.</p>
+            <h4 id="legal_disclaimer_content_links">Haftung für Links</h4>
+            <p id="legal_disclaimer_content_links_text">Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft. Rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar. Eine permanente inhaltliche Kontrolle der verlinkten Seiten ist jedoch ohne konkrete Anhaltspunkte</p>
+            <h4 id="legal_author">Urheberrecht</h4>
+            <p id="legal_author_text">Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Sie sind mit einer Creative Commons Lizenz urheberrechtlich geschützt. Sofern nicht anders angegeben, stehen die Inhalte dieser Seite unter der Creative Commons Namensnennung 3.0 DE Lizenz. Soweit die Inhalte auf dieser Seite nicht vom Betreiber erstellt wurden, werden die Urheberrechte Dritter beachtet. Insbesondere werden Inhalte Dritter als solche gekennzeichnet. Sollten Sie trotzdem auf eine Urheberrechtsverletzung aufmerksam werden, bitten wir um einen entsprechenden Hinweis. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Inhalte umgehend entfernen.</p>
+            <h3 id="data_privacy_statement">Datenschutzerklärung</h3>
+            <h4 id="data_privacy_statement_text1">Bereitstellung der Website und Erstellung von Protokoll- oder Log-Dateien</h4>
+            <h4 id="data_privacy_statement_text2">Welche Daten werden verarbeitet?</h4>
+            <p id="data_privacy_statement_text3">Bei jedem Zugriff auf Inhalte des Internetangebotes werden dort vorübergehend Daten über sogenannte Protokoll- oder Log-Dateien gespeichert, die möglicherweise eine Identifizierung zulassen. Die folgenden Daten werden hierbei erhoben:</p>
+            <ul>
+                <li id="data_privacy_statement_li1">Datum und Uhrzeit des Abrufs</li>
+                <li id="data_privacy_statement_li3">Name des aufgerufenen Internetdienstes, der aufgerufenen Ressource und der verwendeten Aktion</li>
+                <li id="data_privacy_statement_li4">Abfrage, die der Client gestellt hat</li>
+                <li id="data_privacy_statement_li5">übertragene Datenmenge</li>
+                <li id="data_privacy_statement_li6">IP-Adresse des aufrufenden Rechners</li>
+                <li id="data_privacy_statement_li7">Clientinformationen (u.a. Browser, Betriebssystem)</li>
+            </ul>
+            <h4 id="data_privacy_statement_text4">Auf welcher Rechtsgrundlage werden diese Daten verarbeitet?</h4>
+            <p id="data_privacy_statement_text5">Rechtsgrundlage für die vorübergehende Speicherung der Daten ist Art. 6 Abs. 1 lit. e DS-GVO i.V.m. § 3 Abs. 1 NRWDSAnpUG-EU.</p>
+            <h4 id="data_privacy_statement_text6">Zu welchen Zwecken erfolgt die Verarbeitung?</h4>
+            <p id="data_privacy_statement_text7">Die Daten aus den Protokoll- bzw. Logdateien dienen zur Sicherstellung der Funktionsfähigkeit der Website. Zudem dienen sie zur Abwehr und Analyse von Angriffen. In diesen Zwecken liegt auch unser berechtigtes Interesse an der Datenverarbeitung.</p>
+            <h4 id="data_privacy_statement_text8">Wie lange werden die Daten gespeichert?</h4>
+            <p id="data_privacy_statement_text9">Die Daten werden bis zu einer Woche direkt und ausschließlich für Administratoren zugänglich aufbewahrt. Mit dem Hoster des Serverswurde ein entsprechender Vertrag zur Auftragsverarbeitung (AVV) geschlossen. Es handelt sich um einen deutschen Serverstandort</p>
+            <h4 id="data_privacy_statement_text10">Karten</h4>
+            <p id="data_privacy_statement_text11">Die hier gezeigten Hintergrundkarten kommen von:</p>
+            <a class="blackdiv" href="https://www.openstreetmap.org">www.openstreetmap.org</a>
+            <h4 id="data_privacy_statement_text12">Icons</h4>
+            <p id="data_privacy_statement_text14">Das Augen Icon für die Werkzeuge wurde erstellt von:</p>
+            <a class="blackdiv" href="https://www.svgrepo.com/svg/7885/show">SVG Repo - Creative Commons BY 4.0</a>
+
+        </div>
+        <div id="legalFooter" class="modal_footer">OpenNoiseMap</div>
+    </div>
+    <script src="index.js"></script>
+</body>
+
+</html>
