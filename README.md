@@ -3,4 +3,4 @@ Interaktive Karte zur Darstellung der Lärmmessungen der [SensorCommunity](https
 
 Dies ist eine OpenLayers6 Anwendung. Weitere Informationen zur Installation auf:  [OpenLayers Quickstart site](https://openlayers.org/en/latest/doc/quickstart.html).
 
-Zur [Karte](https://opendem.info/ol6/noise/)
+Zur [Karte](http://openmaps.online/noise/)
